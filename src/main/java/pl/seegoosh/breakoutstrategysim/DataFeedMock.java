@@ -28,20 +28,13 @@ public class DataFeedMock {
     private static final Logger LOG = LoggerFactory.getLogger(DataFeedMock.class);
 
     private final Environment environment;
-    private final DataStore dataStore;
-    private final Calculator calculator;
-    private final StrategyProcessor strategyProcessor;
 
-    //should use properties class - no time;
-    @Value("${calculation-period}")
-    private int calculationPeriod;
+    private final EndDayEventPublisher eventPublisher;
 
     @Autowired
-    public DataFeedMock(Environment environment, DataStore dataStore, Calculator calculator, StrategyProcessor strategyProcessor) {
+    public DataFeedMock(Environment environment, EndDayEventPublisher eventPublisher) {
         this.environment = environment;
-        this.dataStore = dataStore;
-        this.calculator = calculator;
-        this.strategyProcessor = strategyProcessor;
+        this.eventPublisher = eventPublisher;
     }
 
     @PostConstruct
@@ -49,13 +42,9 @@ public class DataFeedMock {
         startFeeding();
     }
 
-    //should not do logic within a stream from file, but pass to another stream processed outside - not enough time
     public void startFeeding() {
 
-        Simulator simulator = new SimulatorImpl();
-        simulator.setCashBalance(1000000.0);
-
-        LOG.info("Processing started");
+        LOG.info("Simulation started");
 
         String inputLocation = environment.getProperty("feed");
 
@@ -72,23 +61,10 @@ public class DataFeedMock {
                 String line = scanner.nextLine();
                 String[] cells = line.split(",");
                 LocalDate date = LocalDate.parse(cells[0], DateTimeFormatter.ofPattern("dd.MM.yyyy"));
-                ClosingValue closingValue = new ClosingValue(date, BigDecimal.valueOf(Long.parseLong(cells[4])));
-                dataStore.addClosingValue(closingValue);
+                ClosingValueDTO closingValueDTO = new ClosingValueDTO(date, BigDecimal.valueOf(Long.parseLong(cells[4])));
 
-                simulator.setCurrentPrice(closingValue.getValue().doubleValue());
-
-                if (dataStore.getClosingValuesSize() < calculationPeriod) {
-                    LOG.debug("Not enough data to calculate Bollinger Band with given configuration.");
-                    continue;
-                }
-
-                BollingerBand band = calculator.calculateBollingerBand(dataStore.getClosingValuesFromLastPeriod(calculationPeriod)
-                        .stream().map(ClosingValue::getValue).collect(Collectors.toList()), date);
-                LOG.info("Storing calculated value : {}", band.toString());
-                dataStore.addBand(band);
-                Optional<MarketOrder> order = strategyProcessor.makeOrder(closingValue, band, simulator.getPosition());
-
-                order.ifPresent(simulator::sendOrder);
+                LOG.info("Received data from: {}", date);
+                eventPublisher.publishEndDayEvent(closingValueDTO);
             }
 
             if (scanner.ioException() != null) {

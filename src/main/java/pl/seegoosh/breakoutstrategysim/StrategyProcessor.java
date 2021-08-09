@@ -23,20 +23,20 @@ public class StrategyProcessor {
         this.dataStore = dataStore;
     }
 
-    public Optional<MarketOrder> makeOrder (ClosingValue closingValue, BollingerBand bollingerBand, Position currentPosition){
+    public Optional<MarketOrder> makeOrder (ClosingValueDTO closingValueDTO, BollingerBand bollingerBand, Position currentPosition){
         Optional<MarketOrder> order = Optional.empty();
 
-        if (closingValue.getValue().compareTo(bollingerBand.getLowerBand()) < 0){
+        if (closingValueDTO.getValue().compareTo(bollingerBand.getLowerBand()) < 0){
             order = Optional.of(new MarketOrder(Side.BUY, orderSize));
         }
-        if (closingValue.getValue().compareTo(bollingerBand.getUpperBand()) > 0){
+        if (closingValueDTO.getValue().compareTo(bollingerBand.getUpperBand()) > 0){
             order = Optional.of(new MarketOrder(Side.BUY, -orderSize));
         }
-        if (closingValue.getValue().compareTo(bollingerBand.getAverage()) > 0
+        if (closingValueDTO.getValue().compareTo(bollingerBand.getAverage()) > 0
                 && currentPosition.getDirection() == Direction.LONG){
             order = Optional.of(new MarketOrder(Side.SELL, orderSize));
         }
-        if (closingValue.getValue().compareTo(bollingerBand.getAverage()) < 0
+        if (closingValueDTO.getValue().compareTo(bollingerBand.getAverage()) < 0
                 && currentPosition.getDirection() == Direction.SHORT){
 
         }

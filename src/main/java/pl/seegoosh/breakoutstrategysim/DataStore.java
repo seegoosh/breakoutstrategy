@@ -8,18 +8,21 @@ import java.util.*;
 @Component
 //this SHOULD be H2 - lack of time
 public class DataStore {
-    private Map<LocalDate, ClosingValue> storedClosingValues = new HashMap<>();
+    private Map<LocalDate, ClosingValueDTO> storedClosingValues = new HashMap<>();
     private Map<LocalDate, BollingerBand> storedBands = new HashMap<>();
 
-    public void addClosingValue(ClosingValue value){
+    public void addClosingValue(ClosingValueDTO value){
         storedClosingValues.put(value.getDate(), value);
     }
 
-    public List<ClosingValue> getClosingValuesFromLastPeriod(int numberOfDays){
-        List<ClosingValue> result = new ArrayList<>();
+    public List<ClosingValueDTO> getClosingValuesFromLastPeriod(int numberOfDays){
+        List<ClosingValueDTO> result = new ArrayList<>();
         for (int i = numberOfDays; i >= 0 ; i--) {
             LocalDate day = LocalDate.now().minusDays(i);
-            result.add(storedClosingValues.get(day));
+            ClosingValueDTO dayValue = storedClosingValues.get(day);
+            if (null != dayValue){
+                result.add(storedClosingValues.get(day));
+            }
         }
         return result;
     }

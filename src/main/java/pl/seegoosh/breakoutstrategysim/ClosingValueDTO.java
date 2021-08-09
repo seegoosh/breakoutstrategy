@@ -3,12 +3,12 @@ package pl.seegoosh.breakoutstrategysim;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-public class ClosingValue {
+public class ClosingValueDTO {
     private final LocalDate date;
     private final BigDecimal value;
 
 
-    public ClosingValue(LocalDate date, BigDecimal value) {
+    public ClosingValueDTO(LocalDate date, BigDecimal value) {
         this.date = date;
         this.value = value;
     }
