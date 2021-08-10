@@ -1,7 +1,6 @@
 package pl.seegoosh.breakoutstrategysim.bands;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 
 public class BollingerBand {
     private final BigDecimal upperBand;

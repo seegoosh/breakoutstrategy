@@ -4,7 +4,6 @@ import ch.algotrader.entity.trade.MarketOrder;
 import ch.algotrader.simulation.Simulator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import pl.seegoosh.breakoutstrategysim.bands.BollingerBand;
 import pl.seegoosh.breakoutstrategysim.bands.Calculator;
@@ -14,7 +13,6 @@ import pl.seegoosh.breakoutstrategysim.closing.ClosingValueMapper;
 import pl.seegoosh.breakoutstrategysim.closing.ClosingValueRepository;
 
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class DataProcessor {
