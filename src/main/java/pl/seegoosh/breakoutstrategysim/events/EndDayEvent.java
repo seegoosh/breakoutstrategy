@@ -1,6 +1,7 @@
-package pl.seegoosh.breakoutstrategysim;
+package pl.seegoosh.breakoutstrategysim.events;
 
 import org.springframework.context.ApplicationEvent;
+import pl.seegoosh.breakoutstrategysim.closing.ClosingValueDTO;
 
 public class EndDayEvent extends ApplicationEvent {
     private ClosingValueDTO value;

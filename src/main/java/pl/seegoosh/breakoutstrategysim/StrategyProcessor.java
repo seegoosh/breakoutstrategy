@@ -4,42 +4,43 @@ import ch.algotrader.entity.Position;
 import ch.algotrader.entity.trade.MarketOrder;
 import ch.algotrader.enumeration.Direction;
 import ch.algotrader.enumeration.Side;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import ch.algotrader.simulation.Simulator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import pl.seegoosh.breakoutstrategysim.bands.BollingerBand;
+import pl.seegoosh.breakoutstrategysim.closing.ClosingValue;
+import pl.seegoosh.breakoutstrategysim.closing.ClosingValueDTO;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
 import java.util.Optional;
 
 @Service
 public class StrategyProcessor {
 
-    private final DataStore dataStore;
+    private static final Logger LOG = LoggerFactory.getLogger(StrategyProcessor.class);
 
-    @Value("${order-size}")
-    private long orderSize;
-
-    @Autowired
-    public StrategyProcessor(DataStore dataStore) {
-        this.dataStore = dataStore;
-    }
-
-    public Optional<MarketOrder> makeOrder (ClosingValueDTO closingValueDTO, BollingerBand bollingerBand, Position currentPosition){
+    public Optional<MarketOrder> makeOrder(ClosingValue closingValue, Simulator simulator) {
         Optional<MarketOrder> order = Optional.empty();
+        long allInOrder = BigDecimal.valueOf(simulator.getCashBalance()).divide(closingValue.getValue(), MathContext.DECIMAL32).longValue();
 
-        if (closingValueDTO.getValue().compareTo(bollingerBand.getLowerBand()) < 0){
-            order = Optional.of(new MarketOrder(Side.BUY, orderSize));
+        if (closingValue.getValue().compareTo(closingValue.getLowerBand()) < 0) {
+            order = Optional.of(new MarketOrder(Side.BUY, allInOrder));
         }
-        if (closingValueDTO.getValue().compareTo(bollingerBand.getUpperBand()) > 0){
-            order = Optional.of(new MarketOrder(Side.BUY, -orderSize));
+        if (closingValue.getValue().compareTo(closingValue.getUpperBand()) > 0) {
+            order = Optional.of(new MarketOrder(Side.SELL, -allInOrder));
         }
-        if (closingValueDTO.getValue().compareTo(bollingerBand.getAverage()) > 0
-                && currentPosition.getDirection() == Direction.LONG){
-            order = Optional.of(new MarketOrder(Side.SELL, orderSize));
+        if (closingValue.getValue().compareTo(closingValue.getMovingAverage()) > 0
+                && simulator.getPosition() != null && simulator.getPosition().getDirection() == Direction.LONG) {
+            order = Optional.of(new MarketOrder(Side.SELL, simulator.getPosition().getQuantity()));
         }
-        if (closingValueDTO.getValue().compareTo(bollingerBand.getAverage()) < 0
-                && currentPosition.getDirection() == Direction.SHORT){
+        if (closingValue.getValue().compareTo(closingValue.getMovingAverage()) < 0
+                && simulator.getPosition() != null && simulator.getPosition().getDirection() == Direction.SHORT) {
+            order = Optional.of(new MarketOrder(Side.BUY, simulator.getPosition().getQuantity()));
 
         }
+        order.ifPresent(presentOrder -> LOG.info("Order created: {}", presentOrder));
         return order;
     }
 }

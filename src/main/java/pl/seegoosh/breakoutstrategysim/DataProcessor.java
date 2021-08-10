@@ -6,6 +6,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import pl.seegoosh.breakoutstrategysim.bands.BollingerBand;
+import pl.seegoosh.breakoutstrategysim.bands.Calculator;
+import pl.seegoosh.breakoutstrategysim.closing.ClosingValue;
+import pl.seegoosh.breakoutstrategysim.closing.ClosingValueDTO;
+import pl.seegoosh.breakoutstrategysim.closing.ClosingValueMapper;
+import pl.seegoosh.breakoutstrategysim.closing.ClosingValueRepository;
 
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -18,28 +24,30 @@ public class DataProcessor {
     private final Simulator simulator;
     private final Calculator calculator;
     private final StrategyProcessor strategyProcessor;
-    private final DataStore dataStore;
+    private final ClosingValueRepository repository;
+    private final ClosingValueMapper mapper;
 
-    //should use properties class - no time;
-    @Value("${calculation-period}")
-    private int calculationPeriod;
-
-    public DataProcessor(Simulator simulator, Calculator calculator, StrategyProcessor strategyProcessor, DataStore dataStore) {
+    public DataProcessor(Simulator simulator, Calculator calculator, StrategyProcessor strategyProcessor, ClosingValueRepository repository, ClosingValueMapper mapper) {
         this.simulator = simulator;
         this.calculator = calculator;
         this.strategyProcessor = strategyProcessor;
-        this.dataStore = dataStore;
+        this.repository = repository;
+        this.mapper = mapper;
     }
 
     public void processClosingValue(ClosingValueDTO closingValueDTO){
+        LOG.info("Current market value is : {}", closingValueDTO.getValue());
         simulator.setCurrentPrice(closingValueDTO.getValue().doubleValue());
 
-        BollingerBand band = calculator.calculateBollingerBand(dataStore.getClosingValuesFromLastPeriod(calculationPeriod)
-                .stream().map(ClosingValueDTO::getValue).collect(Collectors.toList()), closingValueDTO.getDate());
-        LOG.info("Storing calculated value : {}", band.toString());
-        dataStore.addBand(band);
-        Optional<MarketOrder> order = strategyProcessor.makeOrder(closingValueDTO, band, simulator.getPosition());
+        BollingerBand band = calculator.calculateBollingerBand(closingValueDTO);
+
+        ClosingValue closingValue = repository.save(mapper.toClosingValue(closingValueDTO, band));
+
+        LOG.info("Storing calculated value : {}", closingValue.toString());
+        Optional<MarketOrder> order = strategyProcessor.makeOrder(closingValue, simulator);
 
         order.ifPresent(simulator::sendOrder);
+        LOG.info("Current balance is : {}", simulator.getCashBalance());
+
     }
 }

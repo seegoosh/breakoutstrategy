@@ -1,15 +1,13 @@
 package pl.seegoosh.breakoutstrategysim;
 
-import ch.algotrader.entity.trade.MarketOrder;
-import ch.algotrader.simulation.Simulator;
-import ch.algotrader.simulation.SimulatorImpl;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
+import pl.seegoosh.breakoutstrategysim.closing.ClosingValueDTO;
+import pl.seegoosh.breakoutstrategysim.events.EndDayEventPublisher;
 
 import javax.annotation.PostConstruct;
 import java.io.FileInputStream;
@@ -18,14 +16,14 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.Optional;
 import java.util.Scanner;
-import java.util.stream.Collectors;
 
 @Component
 public class DataFeedMock {
 
     private static final Logger LOG = LoggerFactory.getLogger(DataFeedMock.class);
+    private static final String FEED = "feed";
+    public static final String CSV_HEADER = "dateTime,open,low,high,close";
 
     private final Environment environment;
 
@@ -46,7 +44,7 @@ public class DataFeedMock {
 
         LOG.info("Simulation started");
 
-        String inputLocation = environment.getProperty("feed");
+        String inputLocation = environment.getProperty(FEED);
 
         if (StringUtils.isBlank(inputLocation)) {
             LOG.error("Feed file not provided. Execution stopping.");
@@ -59,10 +57,14 @@ public class DataFeedMock {
 
             while (scanner.hasNextLine()) {
                 String line = scanner.nextLine();
+                if (line.equals(CSV_HEADER)){
+                    continue;
+                }
                 String[] cells = line.split(",");
                 LocalDate date = LocalDate.parse(cells[0], DateTimeFormatter.ofPattern("dd.MM.yyyy"));
-                ClosingValueDTO closingValueDTO = new ClosingValueDTO(date, BigDecimal.valueOf(Long.parseLong(cells[4])));
+                ClosingValueDTO closingValueDTO = new ClosingValueDTO(date, new BigDecimal(cells[4]));
 
+                LOG.info("--------------");
                 LOG.info("Received data from: {}", date);
                 eventPublisher.publishEndDayEvent(closingValueDTO);
             }
