@@ -46,6 +46,6 @@ public class DataProcessor {
 
         order.ifPresent(simulator::sendOrder);
         LOG.info("Current balance is : {}", simulator.getCashBalance());
-
+        LOG.info("Current quantity is : {}", simulator.getPosition() == null ? 0 : simulator.getPosition().getQuantity());
     }
 }

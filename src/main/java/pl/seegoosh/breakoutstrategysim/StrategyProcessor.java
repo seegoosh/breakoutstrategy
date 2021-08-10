@@ -26,18 +26,21 @@ public class StrategyProcessor {
 
         if (noCurrentPositionOpen && closingValue.getValue().compareTo(closingValue.getLowerBand()) < 0) {
             order = Optional.of(new MarketOrder(Side.BUY, allInOrder));
+            LOG.info("Opening long position");
         }
         if (noCurrentPositionOpen && closingValue.getValue().compareTo(closingValue.getUpperBand()) > 0) {
             order = Optional.of(new MarketOrder(Side.SELL, allInOrder));
+            LOG.info("Opening short position");
         }
         if (closingValue.getValue().compareTo(closingValue.getMovingAverage()) > 0
                 && simulator.getPosition() != null && simulator.getPosition().getDirection() == Direction.LONG) {
             order = Optional.of(new MarketOrder(Side.SELL, simulator.getPosition().getQuantity()));
+            LOG.info("Closing long position");
         }
         if (closingValue.getValue().compareTo(closingValue.getMovingAverage()) < 0
                 && simulator.getPosition() != null && simulator.getPosition().getDirection() == Direction.SHORT) {
             order = Optional.of(new MarketOrder(Side.BUY, -simulator.getPosition().getQuantity()));
-
+            LOG.info("Closing short position");
         }
         order.ifPresent(presentOrder -> LOG.info("Order created: {}", presentOrder));
         return order;
