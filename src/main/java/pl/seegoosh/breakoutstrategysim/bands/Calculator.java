@@ -1,6 +1,5 @@
 package pl.seegoosh.breakoutstrategysim.bands;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import pl.seegoosh.breakoutstrategysim.closing.ClosingValue;
 import pl.seegoosh.breakoutstrategysim.closing.ClosingValueDTO;
@@ -17,11 +16,11 @@ import java.util.stream.Collectors;
 public class Calculator {
     private final ClosingValueRepository repository;
 
-    @Value("${calculation-period}")
-    private int calculationPeriod;
+    private final CalculatorProperties calculatorProperties;
 
-    public Calculator(ClosingValueRepository repository) {
+    public Calculator(ClosingValueRepository repository, CalculatorProperties calculatorProperties) {
         this.repository = repository;
+        this.calculatorProperties = calculatorProperties;
     }
 
     public BollingerBand calculateBollingerBand(ClosingValueDTO currentClosing){
@@ -43,7 +42,7 @@ public class Calculator {
     }
 
     private List<BigDecimal> getValuesForCalculatedPeriod(ClosingValueDTO currentClosing) {
-        List<BigDecimal> values = repository.findClosingValuesSince(currentClosing.getDate().minusDays(calculationPeriod))
+        List<BigDecimal> values = repository.findClosingValuesSince(currentClosing.getDate().minusDays(calculatorProperties.getCalculationPeriod()))
                 .stream().map(ClosingValue::getValue).collect(Collectors.toList());
 
         values.add(currentClosing.getValue());
